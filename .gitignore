@@ -27,6 +27,7 @@ wheels/
 *.egg
 *.conf
 *.json
+*.html
 
 # PyInstaller
 #  Usually these files are written by a python script from a template

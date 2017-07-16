@@ -13,7 +13,7 @@ git clone <Scraper-Demo-SSH-URI>
 cd ScraperDemo
 virtualenv venv
 . venv/bin/activate
-pip install dryscrape
+pip install dryscrape logging
 </pre>
 
 ## Running the Scraper

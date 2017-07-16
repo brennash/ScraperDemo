@@ -1,7 +1,9 @@
 {
 	"login-url":"http://www.greyhound-data.com/login.htm",
+        "logout-url":"http://www.greyhound-data.com/login.htm?do_logout=Logout&",
 	"username":"USERNAME",
 	"password":"PASSWORD",
 	"base-url":"http://www.greyhound-data.com/d?racename=&country=12000&stadium=12000&class=any&mindist=0&maxdist=unlimitied&startmonth=0&startdate=2016&endmonth=&enddate=2017&go=show+races",
-	"log-file":"/home/ubuntu/Scraper/log/scraper.log"
+	"log-file":"/home/ubuntu/ScraperDemo/log/scraper.log",
+        "data-dir":"/home/ubuntu/ScraperDemo/data"
 }

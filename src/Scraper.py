@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 import json
 import logging
 import dryscrape
@@ -16,10 +17,11 @@ class Scraper:
 		self.logFile  = None
 		self.dataDir  = None
 
-		self.loginURL = None
-		self.username = None
-		self.password = None
-		self.baseURL  = None
+		self.loginURL  = None
+		self.logoutURL = None
+		self.username  = None
+		self.password  = None
+		self.baseURL   = None
 
 
 	def run(self, jsonConfigFilename):
@@ -42,12 +44,13 @@ class Scraper:
 			with open(jsonConfigFilename,"r") as json_file:
      				data = json.load(json_file)
 
-				self.username = data['username']
-				self.password = data['password']
-				self.baseURL  = data['base-url']
-				self.loginURL = data['login-url']
-				self.logFile  = data['log-file']
-				self.dataDir  = data['data-dir']
+				self.username  = data['username']
+				self.password  = data['password']
+				self.baseURL   = data['base-url']
+				self.loginURL  = data['login-url']
+				self.logoutURL = data['logout-url']
+				self.logFile   = data['log-file']
+				self.dataDir   = data['data-dir']
 		except Exception, err:
 			print 'Problem with JSON config ({0}).'.format(jsonConfigFilename)
 			print str(err)
@@ -75,15 +78,7 @@ class Scraper:
 
 	def startScraper(self):
 
-		#dryscrape.start_xvfb()
-		#sess = dryscrape.Session(base_url = self.loginURL)
-		#sess.set_attribute('auto_load_images', False)
-		#sess.visit(self.loginURL)
-		#q = sess.at_xpath('user_email')
-		#q.set(self.username)
-		#p = sess.at_xpath('user_password')
-		#p.set(self.username)
-		#q.form().submit()
+		validPages = []
 
 		try:
 			dryscrape.start_xvfb()
@@ -95,40 +90,73 @@ class Scraper:
 			password = session.at_xpath('//*[@name="user_password"]')
 			password.set(self.password)
 			name.form().submit()
-			session.visit(self.baseURL)
 
-			currentURL = session.url()
-			rawHTML    = session.source()
+			session.visit('http://www.greyhound-data.com/d?r=4159265')
+			rawHTML = session.source()
+			self.saveHTML(session.url(), rawHTML)
+			exit(1)
+#			session.visit(self.baseURL)
+
+#			currentURL = session.url()
+#			rawHTML    = session.source()
 
 			# extract all links
-			for link in session.xpath('//a[@href]'):
-				urlLink = link['href']
-				if 'r=' in urlLink:
-					session.visit(link['href'])
-					rawHTML = session.source()
-					self.saveHTML(link['href'], rawHTML)
-					exit(1)
+#			for link in session.xpath('//a[@href]'):
+#				urlLink = link['href']
+#				if 'd?r=' in urlLink:
+#					validPages.append(link)
+#					session.visit(link['href'])
+#					rawHTML = session.source()
+#					self.saveHTML(link['href'], rawHTML)
+
+#
+#			if self.logger is not None:
+#				self.logger.info('Added {0} links to follow.'.format(len(validPages)))
+
+#			for link in validPages:
+#				if self.logger is not None:
+#					self.logger.info('Clicking on link {0}'.format(link['href']))
+#				link.hover()
+#				link.click()
+#				time.sleep(randint(1,4))
+#				rawHTML = session.source()
+
+#				if 'Because of constant attacks on our server' in rawHTML:
+#					print 'Cannot follow link, because of login'
+#					name = session.at_xpath('//*[@name="user_email"]')
+#					name.set(self.username)
+#					password = session.at_xpath('//*[@name="user_password"]')
+#					password.set(self.password)
+#					name.form().submit()
+
+
+#				self.saveHTML(session.url(), rawHTML)
+#				exit(1)
+#
+#			session.visit('self.logoutURL')
 
 			# save a screenshot of the web page
 			# session.render('hounds.png')
 			# print("Screenshot written to 'hounds.png'")
-		except Exception, err:
+		except KeyError, err:
 			if self.logger is None:
 				print 'Error scraping data - {0}'.format(str(err))
 			else:
 				self.logger.error('Error scraping data - {0}'.format(str(err)))
 
+
 	def saveHTML(self, url, html):
+		raceNumber = self.getRaceNumber(url)
+		filename = '{0}/race_{1}.html'.format(self.dataDir, raceNumber)
 
 		if self.dataDir is not None:
 			try:
-				raceNumber = self.getRaceNumber(url)
-				filename = '{0}/race_{1}.html'.format(self.dataDir, raceNumber)
 				if self.logger is not None:
 					self.logger.info('Saving HTML (length: {0}) for race {1}'.format(len(html),raceNumber))
 				file = open(filename,"wb")
-				file.write(html.encodes('utf8'))
+				file.write(html)
 				file.close()
+				print 'Writing html ({0}) to file {1}'.format(len(html), filename)
 			except Exception, err:
 				if self.logger is None:
 					print 'Problem writing html to file'
@@ -137,7 +165,7 @@ class Scraper:
 
 	def getRaceNumber(self, url):
 		if 'r=' in url:
-			startIndex = url.index('?r=')
+			startIndex = url.index('r=')
 			numberStr  = url[(startIndex+3):]
 			tokens     = numberStr.split('&')
 			return tokens[0]
