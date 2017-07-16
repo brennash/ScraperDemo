@@ -15,3 +15,14 @@ virtualenv venv
 . venv/bin/activate
 pip install dryscrape
 </pre>
+
+## Running the Scraper
+In the conf folder, change your username/password to whatever you use to login to the site. Also, 
+if you've installed the repository somewhere else, you might need to change the log folder location too.
+Once you've done all that, then scraping the site is as simple as
+
+<pre>
+python src/Scraper conf/myconfig.json
+</pre>
+
+The output data should be then written to the data folder as raw HTML (parsed HTML to CSV to come later). 

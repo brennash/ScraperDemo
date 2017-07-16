@@ -3,6 +3,7 @@ import sys
 import json
 import logging
 import dryscrape
+from random import randint
 from optparse import OptionParser
 from logging.handlers import RotatingFileHandler
 
@@ -13,6 +14,7 @@ class Scraper:
 
 		self.logger   = None
 		self.logFile  = None
+		self.dataDir  = None
 
 		self.loginURL = None
 		self.username = None
@@ -45,7 +47,7 @@ class Scraper:
 				self.baseURL  = data['base-url']
 				self.loginURL = data['login-url']
 				self.logFile  = data['log-file']
-
+				self.dataDir  = data['data-dir']
 		except Exception, err:
 			print 'Problem with JSON config ({0}).'.format(jsonConfigFilename)
 			print str(err)
@@ -61,11 +63,15 @@ class Scraper:
 			handler = RotatingFileHandler(self.logFile, maxBytes=500000, backupCount=5)
 			format  = "%(asctime)s %(levelname)-8s %(message)s"
 			handler.setFormatter(logging.Formatter(format))
-			handler.setLevel(self.logLevel)
+			handler.setLevel(logging.INFO)
 			self.logger.addHandler(handler)
-			self.logger.setLevel(self.logLevel)
+			self.logger.setLevel(logging.INFO)
+			self.logger.info('Starting logging..')
 		except Exception, err:
 			errorStr = 'Error initializing log file, ',err
+			print self.logFile
+			print errorStr
+			exit(1)
 
 	def startScraper(self):
 
@@ -91,21 +97,52 @@ class Scraper:
 			name.form().submit()
 			session.visit(self.baseURL)
 
+			currentURL = session.url()
+			rawHTML    = session.source()
+
 			# extract all links
 			for link in session.xpath('//a[@href]'):
-				print(link['href'])
+				urlLink = link['href']
+				if 'r=' in urlLink:
+					session.visit(link['href'])
+					rawHTML = session.source()
+					self.saveHTML(link['href'], rawHTML)
+					exit(1)
 
 			# save a screenshot of the web page
-			session.render('hounds.png')
-			print("Screenshot written to 'hounds.png'")
+			# session.render('hounds.png')
+			# print("Screenshot written to 'hounds.png'")
 		except Exception, err:
 			if self.logger is None:
 				print 'Error scraping data - {0}'.format(str(err))
 			else:
 				self.logger.error('Error scraping data - {0}'.format(str(err)))
 
+	def saveHTML(self, url, html):
 
+		if self.dataDir is not None:
+			try:
+				raceNumber = self.getRaceNumber(url)
+				filename = '{0}/race_{1}.html'.format(self.dataDir, raceNumber)
+				if self.logger is not None:
+					self.logger.info('Saving HTML (length: {0}) for race {1}'.format(len(html),raceNumber))
+				file = open(filename,"wb")
+				file.write(html.encodes('utf8'))
+				file.close()
+			except Exception, err:
+				if self.logger is None:
+					print 'Problem writing html to file'
+				else:
+					self.logger.error('Problem writing html to file ({0}) - {1}'.format(filename, err))
 
+	def getRaceNumber(self, url):
+		if 'r=' in url:
+			startIndex = url.index('?r=')
+			numberStr  = url[(startIndex+3):]
+			tokens     = numberStr.split('&')
+			return tokens[0]
+		else:
+			return randint(99999999,99999999999999)
 
 def main(argv):
         parser = OptionParser(usage="Usage: Scraper <json-config-filename>")
