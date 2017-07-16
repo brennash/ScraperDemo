@@ -1,0 +1,6 @@
+{
+	"login-url":"http://www.greyhound-data.com/login.htm",
+	"username":"USERNAME",
+	"password":"PASSWORD",
+	"base-url":"http://www.greyhound-data.com/d?racename=&country=12000&stadium=12000&class=any&mindist=0&maxdist=unlimitied&startmonth=0&startdate=2016&endmonth=&enddate=2017&go=show+races"
+}
