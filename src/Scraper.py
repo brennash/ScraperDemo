@@ -28,7 +28,6 @@ class Scraper:
 		""" Use a separate run function to enable class-wide
 		    testing.
 		"""
-
 		# Load the config file first
 		self.loadConfig(jsonConfigFilename)
 
@@ -85,14 +84,35 @@ class Scraper:
 			session = dryscrape.Session()
 			session.set_attribute('auto_load_images', False)
 			session.visit(self.loginURL)
+
+			session.render('login1.png')
+
 			name = session.at_xpath('//*[@name="user_email"]')
 			name.set(self.username)
 			password = session.at_xpath('//*[@name="user_password"]')
 			password.set(self.password)
-			name.form().submit()
+			button = session.at_xpath('//*[@name="do_login"]')
+			button.click()
+
+			time.sleep(randint(1,3))
+
+			session.render('login2.png')
+
+			button2 = session.at_xpath('//*[@value="continue"]')
+			button2.click()
+			session.render('login3.png')
+			time.sleep(randint(1,3))
+
+
+#			for link in session.xpath('//a[@href]'):
+#				urlLink = link['href']
+#				if 'd?r=' in urlLink:
+
+
 
 			session.visit('http://www.greyhound-data.com/d?r=4159265')
 			rawHTML = session.source()
+			session.render('race.png')
 			self.saveHTML(session.url(), rawHTML)
 			exit(1)
 #			session.visit(self.baseURL)
